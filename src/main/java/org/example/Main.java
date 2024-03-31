@@ -1,24 +1,71 @@
 package org.example;
+import org.example.exceptions.InvalidInput.AccountNotFoundException;
+import org.example.exceptions.InvalidInput.PriceInvalidException;
+import org.example.exceptions.InvalidInput.WrongPersonalInformationException;
+
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Main {
 
     public static void main(String[] args) {
 
-        Account account1 = new Account("Ftm", 123, "Tehran", 11, 50000, "SAVING_ACC");
+        Account account1 = null;
+        try {
+            account1 = new Account("Ftm", 123, "Tehran", 11, 50000, "Zaaz");
+        } catch (WrongPersonalInformationException e) {
+            System.out.println(e.getMessage());
+        }
         System.out.println(account1.checkAccountBalance());
-        System.out.println(account1.withdraw(5000));
-        System.out.println(account1.deposit(1000));
-        System.out.println(account1.deposit(500));
-        System.out.println(account1.deposit(7000));
-        System.out.println(account1.withdraw(1000));
-        System.out.println(account1.deposit(11000));
+        try {
+            System.out.println(account1.withdraw(5000));
+        } catch (PriceInvalidException e) {
+            System.out.println(e.getMessage());
+        }
+        try {
+            System.out.println(account1.deposit(1000));
+        } catch (PriceInvalidException e) {
+            System.out.println(e.getMessage());
+        }
+        try {
+            System.out.println(account1.deposit(500));
+        } catch (PriceInvalidException e) {
+            System.out.println(e.getMessage());
+        }
+        try {
+            System.out.println(account1.deposit(7000));
+        } catch (PriceInvalidException e) {
+            System.out.println(e.getMessage());
+        }
+        try {
+            System.out.println(account1.withdraw(1000));
+        } catch (PriceInvalidException e) {
+            System.out.println(e.getMessage());
+        }
+        try {
+            System.out.println(account1.deposit(11000));
+        } catch (PriceInvalidException e) {
+            System.out.println(e.getMessage());
+        }
         System.out.println(account1.checkAccountBalance());
         System.out.println(account1.profitCalculation());
-        System.out.println(account1.loanRequest("Ftm", 124, 400));
-        System.out.println(account1.loanRequest("Ftm", 123, 400));
-        System.out.println(account1.loanRequest("Ftm", 123, "BUSINESS"));
+        try {
+            System.out.println(account1.loanRequest("Ftm", 124, 400));
+        } catch (AccountNotFoundException | PriceInvalidException e) {
+            System.out.println(e.getMessage());
+        }
+        try {
+            System.out.println(account1.loanRequest("Ftm", 123, 400));
+        } catch (AccountNotFoundException | PriceInvalidException e) {
+            System.out.println(e.getMessage());
+        }
+        try {
+            System.out.println(account1.loanRequest("Ftm", 123, "BUSINESS"));
+        } catch (AccountNotFoundException e) {
+            System.out.println(e.getMessage());
+        }
         System.out.println(account1.accountBalance);
     }
 }
@@ -54,6 +101,7 @@ class Account {
     int nationalCode;
     String cityName;
     int bankNumber;
+    int phoneNumber;
     float accountBalance;
     accountType typeOfAccount;
     int accountScore = 0;
@@ -61,7 +109,16 @@ class Account {
 
     // ========= constructors
     Account(String name, int nationalCode, String cityName, int bankNumber, float accountBalance,
-            String typeOfAccount, LocalDate dateOfBirth) {
+            String typeOfAccount, LocalDate dateOfBirth , String phoneNumber) throws WrongPersonalInformationException {
+        String regexPattern = "^(\\+98|0)?9\\d{10}$";
+        Pattern pattern = Pattern.compile(regexPattern);
+        Matcher matcher = pattern.matcher("09395327229");
+        if (matcher.matches()) {
+            throw new WrongPersonalInformationException("wrong phoneNumber");
+        }
+       if(String.valueOf(nationalCode).length()<10) {
+            throw new WrongPersonalInformationException("wrong National code");
+        }
         this.name = name;
         this.nationalCode = nationalCode;
         this.cityName = cityName;
@@ -69,27 +126,28 @@ class Account {
         this.accountBalance = accountBalance;
         this.typeOfAccount = accountType.valueOf(typeOfAccount);
         this.dateOfBirth = dateOfBirth;
+
     }
 
     // Default dateOfBirth {all the other ones send null for dateOfBirth}
     Account(String name, int nationalCode, String cityName, int bankNumber, float accountBalance,
-            String typeOfAccount) {
-        this(name, nationalCode, cityName, bankNumber, accountBalance, typeOfAccount, null);
+            String typeOfAccount) throws WrongPersonalInformationException {
+        this(name, nationalCode, cityName, bankNumber, accountBalance, typeOfAccount, null, "09395327229");
     }
 
     // Default cityName & accountBalance
-    Account(String name, int nationalCode, int bankNumber, String typeOfAccount) {
-        this(name, nationalCode, "Esfahan", bankNumber, 2000, typeOfAccount, null);
+    Account(String name, int nationalCode, int bankNumber, String typeOfAccount) throws WrongPersonalInformationException {
+        this(name, nationalCode, "Esfahan", bankNumber, 2000, typeOfAccount, null, "09395327229");
     }
 
     // Default accountBalance
-    Account(String name, int nationalCode, String cityName, int bankNumber, String typeOfAccount) {
-        this(name, nationalCode, cityName, bankNumber, 2000, typeOfAccount, null);
+    Account(String name, int nationalCode, String cityName, int bankNumber, String typeOfAccount) throws WrongPersonalInformationException {
+        this(name, nationalCode, cityName, bankNumber, 2000, typeOfAccount, null, "09395327229");
     }
 
     // Default cityName
-    Account(String name, int nationalCode, int bankNumber, float accountBalance, String typeOfAccount) {
-        this(name, nationalCode, "Esfahan", bankNumber, accountBalance, typeOfAccount, null);
+    Account(String name, int nationalCode, int bankNumber, float accountBalance, String typeOfAccount) throws WrongPersonalInformationException {
+        this(name, nationalCode, "Esfahan", bankNumber, accountBalance, typeOfAccount, null, "09395327229");
     }
 
     // ========= methods
@@ -120,7 +178,10 @@ class Account {
         return "Your bank account balance : " + this.accountBalance;
     }
 
-    String withdraw(float value) {
+    String withdraw(float value) throws PriceInvalidException {
+        if(value<0){
+            throw new PriceInvalidException();
+        }
 
         // check withdraw limit
         if (value > 10000) {
@@ -139,8 +200,10 @@ class Account {
 
     }
 
-    String deposit(float value) {
-
+    String deposit(float value) throws PriceInvalidException {
+        if(value<0){
+            throw new PriceInvalidException();
+        }
         // check deposit limit
         if (value > 1000) {
             this.accountBalance *= 0.99;
@@ -162,11 +225,13 @@ class Account {
         return this.accountBalance * 0.02f;
     }
 
-    String loanRequest(String name, int nationalCode, int value) {
-
+    String loanRequest(String name, int nationalCode, int value) throws AccountNotFoundException, PriceInvalidException {
+        if(value<0){
+            throw new PriceInvalidException();
+        }
         // account validation
         if (this.name != name || this.nationalCode != nationalCode) {
-            return "Account Not Found";
+            throw new AccountNotFoundException();
         }
 
         // check accountBalance limit based on loanRequest value
@@ -189,11 +254,11 @@ class Account {
         return "Loan Application Applied Successfully";
     }
 
-    String loanRequest(String name, int nationalCode, String typeOfLoan) {
+    String loanRequest(String name, int nationalCode, String typeOfLoan) throws AccountNotFoundException {
 
         // account validation
         if (this.name != name || this.nationalCode != nationalCode) {
-            return "Account Not Found";
+            throw new AccountNotFoundException();
         }
 
         if (typeOfLoan == "STUDENT" || typeOfLoan == "MARRIAGE") {
