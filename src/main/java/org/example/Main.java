@@ -2,6 +2,10 @@ package org.example;
 import org.example.exceptions.InvalidInput.AccountNotFoundException;
 import org.example.exceptions.InvalidInput.PriceInvalidException;
 import org.example.exceptions.InvalidInput.WrongPersonalInformationException;
+import org.example.exceptions.Invalidrequests.LessScoreException;
+import org.example.exceptions.Invalidrequests.lessAccountBalanceException;
+import org.example.exceptions.Invalidrequests.moreThanDepositLimitException;
+import org.example.exceptions.Invalidrequests.moreThanDrawLimitException;
 
 import java.time.LocalDate;
 import java.time.Period;
@@ -18,47 +22,55 @@ public class Main {
         } catch (WrongPersonalInformationException e) {
             System.out.println(e.getMessage());
         }
-        System.out.println(account1.checkAccountBalance());
+        try {
+            System.out.println(account1.checkAccountBalance());
+        } catch (lessAccountBalanceException e) {
+            System.out.println(e.getMessage());
+        }
         try {
             System.out.println(account1.withdraw(5000));
-        } catch (PriceInvalidException e) {
+        } catch (PriceInvalidException | lessAccountBalanceException | moreThanDrawLimitException e){
             System.out.println(e.getMessage());
         }
         try {
             System.out.println(account1.deposit(1000));
-        } catch (PriceInvalidException e) {
+        } catch (PriceInvalidException  | moreThanDepositLimitException e) {
             System.out.println(e.getMessage());
         }
         try {
             System.out.println(account1.deposit(500));
-        } catch (PriceInvalidException e) {
+        } catch (PriceInvalidException| moreThanDepositLimitException e) {
             System.out.println(e.getMessage());
         }
         try {
             System.out.println(account1.deposit(7000));
-        } catch (PriceInvalidException e) {
+        } catch (PriceInvalidException | moreThanDepositLimitException e) {
             System.out.println(e.getMessage());
         }
         try {
             System.out.println(account1.withdraw(1000));
-        } catch (PriceInvalidException e) {
+        } catch (PriceInvalidException | moreThanDrawLimitException | lessAccountBalanceException e) {
             System.out.println(e.getMessage());
         }
         try {
             System.out.println(account1.deposit(11000));
-        } catch (PriceInvalidException e) {
+        } catch (PriceInvalidException  | moreThanDepositLimitException e) {
             System.out.println(e.getMessage());
         }
-        System.out.println(account1.checkAccountBalance());
+        try {
+            System.out.println(account1.checkAccountBalance());
+        } catch (lessAccountBalanceException e) {
+            System.out.println(e.getMessage());
+        }
         System.out.println(account1.profitCalculation());
         try {
             System.out.println(account1.loanRequest("Ftm", 124, 400));
-        } catch (AccountNotFoundException | PriceInvalidException e) {
+        } catch (AccountNotFoundException | PriceInvalidException | lessAccountBalanceException | LessScoreException e) {
             System.out.println(e.getMessage());
         }
         try {
             System.out.println(account1.loanRequest("Ftm", 123, 400));
-        } catch (AccountNotFoundException | PriceInvalidException e) {
+        } catch (AccountNotFoundException | PriceInvalidException | lessAccountBalanceException | LessScoreException e) {
             System.out.println(e.getMessage());
         }
         try {
@@ -163,7 +175,7 @@ class Account {
         }
     }
 
-    String checkAccountBalance() {
+    String checkAccountBalance() throws lessAccountBalanceException {
 
         if (this.typeOfAccount == accountType.SAVING_ACC && this.accountBalance > 1) {
             this.accountBalance--;
@@ -172,25 +184,28 @@ class Account {
             this.accountBalance -= 2;
             this.accountScore += 10;
         } else {
-            return "You are Very Poor";
+            throw new lessAccountBalanceException();
+          //  return "You are Very Poor";
         }
 
         return "Your bank account balance : " + this.accountBalance;
     }
 
-    String withdraw(float value) throws PriceInvalidException {
+    String withdraw(float value) throws PriceInvalidException, moreThanDrawLimitException, lessAccountBalanceException {
         if(value<0){
             throw new PriceInvalidException();
         }
 
         // check withdraw limit
         if (value > 10000) {
-            return "The Withdrawal Limit is $10000";
+            throw new moreThanDrawLimitException();
+           // return "The Withdrawal Limit is $10000";
         }
 
         // check if account balance is sufficient
         if (this.accountBalance < value) {
-            return "Your Account Balance is NOT Enough";
+            throw new lessAccountBalanceException();
+            //return "Your Account Balance is NOT Enough";
         }
 
         // everything is OK
@@ -200,14 +215,15 @@ class Account {
 
     }
 
-    String deposit(float value) throws PriceInvalidException {
+    String deposit(float value) throws PriceInvalidException, moreThanDepositLimitException {
         if(value<0){
             throw new PriceInvalidException();
         }
         // check deposit limit
         if (value > 1000) {
             this.accountBalance *= 0.99;
-            return "The Deposit Limit is $1000\nYour balance after fine : " + this.accountBalance;
+            throw new moreThanDepositLimitException();
+           // return "The Deposit Limit is $1000\nYour balance after fine : " + this.accountBalance;
         }
 
         // everything is ready
@@ -225,7 +241,10 @@ class Account {
         return this.accountBalance * 0.02f;
     }
 
-    String loanRequest(String name, int nationalCode, int value) throws AccountNotFoundException, PriceInvalidException {
+    String loanRequest(String name, int nationalCode, int value) throws AccountNotFoundException, PriceInvalidException, lessAccountBalanceException, LessScoreException {
+        if(value>this.accountBalance*2){
+            throw new lessAccountBalanceException();
+        }
         if(value<0){
             throw new PriceInvalidException();
         }
@@ -241,7 +260,8 @@ class Account {
 
         // check account score limit
         if (this.accountScore < 100) {
-            return "You don't Have Enough Score";
+            throw new LessScoreException();
+            //return "You don't Have Enough Score";
         }
 
         // check loan limit for SAVING_ACC & SALARY_ACC
